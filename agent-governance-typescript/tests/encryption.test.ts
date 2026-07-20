@@ -131,6 +131,38 @@ describe("X3DHKeyManager", () => {
     expect(Buffer.from(aliceResult.sharedSecret).equals(Buffer.from(bobResult.sharedSecret))).toBe(true);
   });
 
+  test("matches the Python X3DH KDF fixture", () => {
+    const decode = (value: string): Uint8Array =>
+      new Uint8Array(Buffer.from(value, "base64"));
+    const seed = decode("IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiI=");
+    const bob = new X3DHKeyManager(seed, ed25519.getPublicKey(seed));
+
+    (bob as any).signedPreKeyPair = {
+      keyPair: {
+        privateKey: decode("xNRKeMYUxhD/igrHtmXDDRrqBd3wUwDS9D9CDWaRuAM="),
+        publicKey: decode("qER3v3BtyomITalPR25chse1Px2xAjfmdtbGgGAbVRw="),
+      },
+      signature: decode(
+        "kxfk374VaphjAuHFMFfVUlm3etM9QnSVGdrntzqIdqHjDYPnRPaJyZvejw3TOXBmSMNETEYfqqyY2jHL+ZfdBw==",
+      ),
+      keyId: 0,
+    };
+    (bob as any).oneTimePreKeys.set(0, {
+      privateKey: decode("zLzf4ohBwjXCH73rcp4eiLx6rYThUFQ9z+ysVTpl47o="),
+      publicKey: decode("mihVajC5/LCFUfaUug2ESMTL6irsp5Cs4vbSBNKwTG8="),
+    });
+
+    const result = bob.respond(
+      decode("ekbhKf2AUEdEhDfkdE8fFXa+jESf31fgxYDTbFz8Zmg="),
+      decode("9JRLbHOymuW0vUXPuTNPfRpsfIRZAvcgXuvdN0f4C3A="),
+      0,
+    );
+
+    expect(Buffer.from(result.sharedSecret).toString("base64")).toBe(
+      "CLTqoxIpm7zqg6pGvdxFSCo+BqGBANfpQDBAwLFssFE=",
+    );
+  });
+
   test("consumed OTK raises", () => {
     const bob = makeManager();
     bob.generateSignedPreKey();

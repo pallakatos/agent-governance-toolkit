@@ -24,7 +24,8 @@ const randomBytes = (n: number): Uint8Array => {
 
 const X3DH_INFO = new TextEncoder().encode("AgentMesh_X3DH_v1");
 const KEY_LEN = 32;
-const FF_SALT = new Uint8Array(32).fill(0xff);
+const F_PREFIX = new Uint8Array(32).fill(0xff);
+const ZERO_SALT = new Uint8Array(32);
 
 export interface X25519KeyPair {
   privateKey: Uint8Array;
@@ -77,7 +78,8 @@ export function ed25519ToX25519(
 }
 
 function kdf(ikm: Uint8Array): Uint8Array {
-  return hkdf(sha256, ikm, FF_SALT, X3DH_INFO, KEY_LEN);
+  // Signal X3DH §2.2: prepend F to the key material and use a zero HKDF salt.
+  return hkdf(sha256, concat(F_PREFIX, ikm), ZERO_SALT, X3DH_INFO, KEY_LEN);
 }
 
 function concat(...arrays: Uint8Array[]): Uint8Array {
